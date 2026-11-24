@@ -104,6 +104,21 @@ CREATE TABLE IF NOT EXISTS overload_holds(
   side_lane_note TEXT,
   FOREIGN KEY(ticket_id) REFERENCES weigh_tickets(id)
 );
+CREATE TABLE IF NOT EXISTS gross_rulings(
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  ticket_id INTEGER NOT NULL,
+  hold_id INTEGER,
+  gross_t REAL NOT NULL,
+  threshold_t REAL NOT NULL,
+  overweight_t REAL NOT NULL,
+  scope TEXT NOT NULL,
+  source TEXT NOT NULL,
+  ruling_no TEXT NOT NULL,
+  status TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  FOREIGN KEY(ticket_id) REFERENCES weigh_tickets(id),
+  FOREIGN KEY(hold_id) REFERENCES overload_holds(id)
+);
 CREATE TABLE IF NOT EXISTS gate_releases(
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   ticket_id INTEGER NOT NULL,

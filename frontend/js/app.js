@@ -57,6 +57,7 @@ createApp({
       ticket_code: "", axles_json: '[{"axle":1,"w":9},{"axle":2,"w":11},{"axle":3,"w":10}]',
     });
     const overloadOpenForm = ref({ ticket_id: 0, side_lane_note: "" });
+    const closeForms = ref({});
     const gateForm = ref({ ticket_id: 0, officer: "闸口值班" });
     const sealForm = ref({ ticket_id: 0, manifest: "" });
     const blForm = ref({
@@ -196,11 +197,27 @@ createApp({
         flashOk("挂起已开"); await refresh();
       } catch (e) { flashErr(e); }
     }
-    async function closeOverload(holdId) {
+    async function closeOverload(hold) {
       clearFlash();
+      const reweigh = Number(closeForms.value[hold.id]);
+      if (!reweigh || reweigh <= 0) {
+        flashErr(new Error("闭环须填复磅毛重（甲路径同事务重裁）"));
+        return;
+      }
+      if (reweigh > Number(hold.threshold_t)) {
+        flashErr(new Error(`复磅毛重${reweigh}t仍超阈值${hold.threshold_t}t，闭环将整笔回滚拒收`));
+        return;
+      }
       try {
-        await api.closeOverload({ hold_id: holdId, note: "前端闭环" });
-        flashOk("挂起已闭"); await refresh();
+        const r = await api.closeOverload({
+          hold_id: hold.id,
+          note: "前端闭环重裁",
+          reweigh_gross_t: reweigh,
+          scope: "正式",
+        });
+        flashOk(`挂起已闭并落正式裁定：${r.ruling_no}，正式毛重 ${r.reweigh_gross_t}t`);
+        closeForms.value[hold.id] = "";
+        await refresh();
       } catch (e) { flashErr(e); }
     }
     async function releaseGate() {
@@ -264,7 +281,7 @@ createApp({
       dash, bridges, lanes, tickets, overloads, gateReleases, seals, blList,
       lineageEdges, customsJobs, craneJobs, bridgeDetail, ticketDetail,
       reconOne, reconAllItems, proofOne, reconCode, proofCode,
-      bridgeForm, laneForm, ticketForm, overloadOpenForm, gateForm, sealForm,
+      bridgeForm, laneForm, ticketForm, overloadOpenForm, closeForms, gateForm, sealForm,
       blForm, lineageForm, customsForm, craneForm,
       adjudicableTickets, releasableTickets, sealableTickets,
       login, logout, refresh,

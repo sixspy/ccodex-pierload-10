@@ -69,6 +69,30 @@ def validate_no_open_overload(conn, ticket_id: int) -> None:
         raise HTTPException(409, "存在开放超重挂起，不得放行")
 
 
+def validate_formal_gross_ruling(conn, ticket: dict) -> None:
+    """放行口径：凡走过超重挂起的票，须有与当前正式毛重同值的正式裁定。
+
+    影子裁定不晋升、不采信；缺正式裁定或裁定毛重与正式毛重不符即拒放，
+    防止「挂起已闭、毛重假绿」。
+    """
+    hold = conn.execute(
+        "SELECT id FROM overload_holds WHERE ticket_id=? LIMIT 1",
+        (ticket["id"],),
+    ).fetchone()
+    if not hold:
+        return
+    ruling = conn.execute(
+        """SELECT gross_t FROM gross_rulings
+           WHERE ticket_id=? AND scope='正式' AND status='已裁定'
+           ORDER BY id DESC LIMIT 1""",
+        (ticket["id"],),
+    ).fetchone()
+    if not ruling:
+        raise HTTPException(409, "无正式毛重裁定，影子不晋升，不得放行")
+    if abs(float(ruling["gross_t"]) - float(ticket["gross_t"])) > 1e-6:
+        raise HTTPException(409, "正式裁定毛重与当前正式毛重不符，不得放行")
+
+
 def format_manifest(ticket: dict, gross: float, generation: int) -> str:
     return (
         f"票号={ticket['ticket_code']};"

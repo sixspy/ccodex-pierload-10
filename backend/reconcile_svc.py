@@ -104,10 +104,27 @@ def proof_ticket(ticket_code: str, authorization: AuthHeader = None):
             """SELECT id FROM overload_holds WHERE ticket_id=? AND status='开放'""",
             (ticket["id"],),
         ).fetchone()
+        # 正式毛重同源 weigh_tickets.gross_t；有提单即按正式口径核对，不依赖封闸快照
         manifest_match = False
-        if seal and bl:
+        if bl:
             manifest_match = validate_bl_match(
                 float(bl["declared_gross_t"]), float(ticket["gross_t"])
+            )
+        # 放行口径同闸口：走过挂起的票须有与正式毛重同值的正式裁定
+        ruling = conn.execute(
+            """SELECT gross_t FROM gross_rulings
+               WHERE ticket_id=? AND scope='正式' AND status='已裁定'
+               ORDER BY id DESC LIMIT 1""",
+            (ticket["id"],),
+        ).fetchone()
+        formal_ruling_ok = True
+        if conn.execute(
+            "SELECT id FROM overload_holds WHERE ticket_id=? LIMIT 1",
+            (ticket["id"],),
+        ).fetchone():
+            formal_ruling_ok = bool(
+                ruling
+                and abs(float(ruling["gross_t"]) - float(ticket["gross_t"])) <= 1e-6
             )
         return {
             "ticket_code": ticket_code,
@@ -118,7 +135,11 @@ def proof_ticket(ticket_code: str, authorization: AuthHeader = None):
             "seal_generation": seal["ticket_generation"] if seal else None,
             "released": release is not None,
             "overload_closed": overload_closed,
+            "formal_ruling_ok": formal_ruling_ok,
             "coherent": bool(
-                manifest_match and overload_closed and (seal or release)
+                manifest_match
+                and overload_closed
+                and formal_ruling_ok
+                and (seal or release)
             ),
         }

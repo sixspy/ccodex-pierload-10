@@ -7,5 +7,14 @@
     "status": "开放",
     "opened_at": "2026-01-09T14:21:00",
     "side_lane_note": "旁路甲待驳载"
+  },
+  {
+    "ticket_code": "WT-OL-J60",
+    "hold_key": "HOLD-OL-J60",
+    "overweight_t": 9.5,
+    "threshold_t": 49,
+    "status": "开放",
+    "opened_at": "2026-01-11T07:06:00",
+    "side_lane_note": "闭环案癸：OL-J60 超重挂起，待闭环同重裁"
   }
 ]

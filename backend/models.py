@@ -44,6 +44,8 @@ class OverloadOpenIn(BaseModel):
 class OverloadCloseIn(BaseModel):
     hold_id: int
     note: str = ""
+    reweigh_gross_t: float | None = Field(default=None, gt=0)
+    scope: str = "正式"
 
 
 class GateReleaseIn(BaseModel):

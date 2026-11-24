@@ -80,11 +80,16 @@ def get_ticket(ticket_id: int, authorization: AuthHeader = None):
             "SELECT * FROM gate_releases WHERE ticket_id=? ORDER BY id DESC",
             (ticket_id,),
         ).fetchall()
+        rulings = conn.execute(
+            """SELECT * FROM gross_rulings WHERE ticket_id=? ORDER BY id DESC""",
+            (ticket_id,),
+        ).fetchall()
         return {
             "ticket": data,
             "overload_holds": [dict(h) for h in holds],
             "gate_seals": [dict(s) for s in seals],
             "gate_releases": [dict(r) for r in releases],
+            "gross_rulings": [dict(r) for r in rulings],
         }
 
 

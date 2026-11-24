@@ -37,7 +37,15 @@ export const ticketsViewTemplate = `
     </tbody>
   </table>
   <div v-if="ticketDetail" class="detail-box">
-    <p>车牌 {{ ticketDetail.ticket.vehicle_plate }} · 超重挂起 {{ ticketDetail.overload_holds.length }} 条</p>
+    <p>车牌 {{ ticketDetail.ticket.vehicle_plate }} · 超重挂起 {{ ticketDetail.overload_holds.length }} 条 · 正式毛重 {{ fmtT(ticketDetail.ticket.gross_t) }}</p>
+    <p v-if="ticketDetail.gross_rulings && ticketDetail.gross_rulings.length">
+      毛重裁定：
+      <span v-for="r in ticketDetail.gross_rulings" :key="r.id" class="badge"
+            :class="r.scope==='正式' ? 'pass' : 'warn'" style="margin-right:6px">
+        {{ r.ruling_no }} · {{ r.scope }} · {{ r.gross_t }}t · {{ r.source }}
+      </span>
+    </p>
+    <p v-else class="hint">暂无毛重裁定（挂起未闭环重裁）</p>
   </div>
 </section>
 `;

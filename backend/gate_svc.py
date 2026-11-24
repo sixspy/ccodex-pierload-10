@@ -7,7 +7,11 @@ from auth import AuthHeader, require_user, require_writer
 from db import connect, now_iso, write_audit
 from locks import release, require_lock
 from models import GateReleaseIn
-from validators import validate_no_open_overload, validate_ticket_mutable
+from validators import (
+    validate_formal_gross_ruling,
+    validate_no_open_overload,
+    validate_ticket_mutable,
+)
 
 router = APIRouter(tags=["gate"])
 
@@ -46,6 +50,7 @@ def release_gate(body: GateReleaseIn, authorization: AuthHeader = None):
             if ticket["status"] == "旁路挂起":
                 raise HTTPException(409, "旁路挂起须先闭环")
             validate_no_open_overload(conn, body.ticket_id)
+            validate_formal_gross_ruling(conn, dict(ticket))
             exists = conn.execute(
                 "SELECT id FROM gate_releases WHERE ticket_id=? AND status='已放行'",
                 (body.ticket_id,),
